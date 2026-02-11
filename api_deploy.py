@@ -65,5 +65,5 @@ def launch_qaas(token: str):
 
 # --- START THE ENGINE ---
 # Replace 'YOUR_NGROK_TOKEN' with your actual token
-NGROK_TOKEN = "39X6wCA9wuGCr8RwqwaOXRlwkJh_7MzzTfinwSnUAaQMESsd9" 
+NGROK_TOKEN = 39X6wCA9wuGCr8RwqwaOXRlwkJh_7MzzTfinwSnUAaQMESsd9 
 launch_qaas(NGROK_TOKEN)
