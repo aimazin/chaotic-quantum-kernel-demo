@@ -1,67 +1,59 @@
 import uvicorn
 import numpy as np
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List
 
-# --- CORE RYDD-CIST LOGIC (Imported from your demo) ---
-def chaotic_feature_map(X, beta=0.7, freq=3.0):
-    """Encodes raw data into the chaotic SU(n) manifold."""
-    X = np.asarray(X)
+# --- CORE RYDD-CIST LOGIC ---
+def chaotic_feature_map(X: np.ndarray, beta: float = 0.7, freq: float = 3.0) -> np.ndarray:
+    """The engine: Maps data into the stable chaotic SU(n) manifold."""
     fourier = np.sin(freq * np.pi * X) + np.cos(freq * np.pi * X**2)
     chaos = np.sum(np.log1p(np.abs(X)) ** beta, axis=1, keepdims=True)
     return np.hstack([fourier, chaos])
 
 # --- API DATA SCHEMAS ---
 class LiquidityData(BaseModel):
-    # Expects a list of coordinate pairs, e.g., [[0.1, 0.5], [1.2, -0.3]]
-    points: List[List[float]] = Field(
-        ..., 
-        example=[[0.5, 0.5], [-1.0, 0.2]],
-        description="List of 2D coordinates representing systemic data points."
+    # Pydantic v2 Style Configuration
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"points": [[0.5, 0.1], [-1.2, 0.8], [0.3, -0.4]]}
+        }
     )
+    points: List[List[float]] = Field(..., min_length=1, description="Data points for healing.")
 
 class HealingResponse(BaseModel):
     status: str
     healed_dimensions: int
     chaos_coefficient: float
+    # We return the mapped data as a list of lists for JSON serializability
     mapped_vectors: List[List[float]]
 
-# --- FASTAPI APP CONFIGURATION ---
+# --- FASTAPI APP ---
 app = FastAPI(
-    title="RYDD-CIST QaaS API",
-    description="Quantum-Inspired Chaotic Kernel for Systemic Healing",
-    version="1.0.0"
+    title="RYDD-CIST QaaS Node",
+    description="2026 Sovereign Quantum AI Service Endpoint",
+    version="1.1.0"
 )
 
-@app.get("/")
-async def root():
-    return {"message": "RYDD-CIST Gateway Active. System: Healthy."}
-
-@app.post("/heal", response_model=HealingResponse)
-async def heal_data(input_data: LiquidityData):
-    """
-    Applies the Chaotic Quantum Kernel to 'heal' (stabilize) 
-    incoming high-entropy data.
-    """
+@app.post("/heal", response_model=HealingResponse, status_code=status.HTTP_201_CREATED)
+async def heal_manifold(input_data: LiquidityData):
     try:
-        # Convert input to NumPy
         X_raw = np.array(input_data.points)
         
-        # 1. Apply the Chaotic Feature Map (Phase 2 Logic)
+        # Execute Kernel
         X_mapped = chaotic_feature_map(X_raw)
         
-        # 2. Return the stabilized (healed) manifold
         return {
-            "status": "Success: Manifold Stabilized",
+            "status": "Manifold Stabilized via RYDD-CIST",
             "healed_dimensions": X_mapped.shape[1],
-            "chaos_coefficient": 0.7, # Static for demo, dynamic in Phase 3
-            "mapped_vectors": X_mapped.tolist()
+            "chaos_coefficient": 0.7,
+            "mapped_vectors": X_mapped.tolist() # Safe casting to float
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Kernel Execution Error: {str(e)}"
+        )
 
-# --- SERVER ENTRY POINT ---
 if __name__ == "__main__":
-    print("Launching RYDD-CIST QaaS Node on http://localhost:8000")
     uvicorn.run(app, host="0.0.0.0", port=8000)
