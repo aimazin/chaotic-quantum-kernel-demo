@@ -1,17 +1,5 @@
-# --- Core QaaS Stack ---
 fastapi[standard]>=0.120.0
 uvicorn>=0.30.0
 pydantic>=2.10.0
 numpy>=2.1.0
-
-# --- Scientific & Visualization ---
 scikit-learn>=1.5.0
-matplotlib>=3.9.0
-
-# --- Deployment Utilities ---
-pyngrok>=7.1.0
-nest-asyncio>=1.6.0
-
-# --- reg ---
-numpy>=1.21.0
-pytest>=6.0.0

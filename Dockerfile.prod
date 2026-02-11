@@ -1,36 +1,15 @@
-# --- Stage 1: Build & Dependency Resolution ---
 FROM python:3.11-slim as builder
-
 WORKDIR /build
 COPY requirements.txt .
-
-# Install dependencies into a local directory to keep the final image clean
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# --- Stage 2: Final Production Image ---
 FROM python:3.11-slim
-
-LABEL maintainer="Amaze / RYDD-CIST"
-LABEL version="1.0-Phase2"
-
-# Set environment variables for high-performance Python
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
-
 WORKDIR /app
-
-# Copy only the installed packages from the builder stage
 COPY --from=builder /install /usr/local
-# Copy your application code
 COPY . /app/
-
-# Create a non-root user for security (2026 Industry Standard)
+# Security: Run as non-root
 RUN useradd -m qaas_user && chown -R qaas_user /app
 USER qaas_user
-
-# Expose the QaaS Gateway Port
 EXPOSE 8000
-
-# Start the RYDD-CIST Node
+# Production: 4 workers for high-concurrency liquidity healing
 CMD ["uvicorn", "api_deploy:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
