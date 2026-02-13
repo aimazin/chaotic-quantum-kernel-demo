@@ -1,15 +1,36 @@
+# --- Stage 1: Build Stage ---
 FROM python:3.11-slim as builder
+
+# Install system dependencies needed for scientific Python
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /build
 COPY requirements.txt .
+
+# Install with a temporary cache to prevent deployment stalls
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
+# --- Stage 2: Final Sovereign Image ---
 FROM python:3.11-slim
+
 WORKDIR /app
+
+# Bring over the compiled scientific libraries
 COPY --from=builder /install /usr/local
 COPY . /app/
-# Security: Run as non-root
-RUN useradd -m qaas_user && chown -R qaas_user /app
-USER qaas_user
+
+# Environment hardening
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Expose the RYDD-CIST Gateway
 EXPOSE 8000
-# Production: 4 workers for high-concurrency liquidity healing
-CMD ["uvicorn", "api_deploy:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+
+# Non-root user for security
+RUN useradd -m qaas_user
+USER qaas_user
+
+CMD ["uvicorn", "api_deploy:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,7 +1,22 @@
+# Use a Python 3.11 base image with necessary math headers
 FROM python:3.11-slim
+
+# Install system-level dependencies for NumPy/SciKit-Learn
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
+
+# Copy and install dependencies first (for faster rebuilds)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the project
 COPY . .
-# Start with reload enabled for development
+
+# EXPOSE the port for local access
+EXPOSE 8000
+
+# DEV MODE: Use --reload so the server updates as you code
 CMD ["uvicorn", "api_deploy:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
